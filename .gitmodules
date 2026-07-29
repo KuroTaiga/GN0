@@ -1,6 +1,6 @@
 [submodule "GN-Bench-Tools"]
 	path = GN-Bench-Tools
-	url = https://github.com/TeleHuman/GN-Bench-Tools.git
+	url = https://github.com/KuroTaiga/GN-Bench-Tools.git
 [submodule "submodules/fused-ssim"]
 	path = submodules/fused-ssim
 	url = https://github.com/rahul-goel/fused-ssim.git
