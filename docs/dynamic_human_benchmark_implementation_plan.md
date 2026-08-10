@@ -76,11 +76,15 @@ schema changes.
 Completed or scaffolded in GN0/GN-Bench-Tools:
 
 - GN-Bench-Tools evaluation/RL/baseline skeletons exist.
-- `NavDPScenarioAdapter` can load a single scenario JSON and a draft split
-  manifest into a lightweight `HumanCentricEpisode`.
-- `HumanCentricEvaluator` exists but still returns empty replay results.
+- `NavDPScenarioAdapter` can load scenario JSON, example/split manifests, and
+  directories into GN-Bench-compatible `HumanCentricEpisode` records.
+- `HumanCentric-v0` is registered as a GN-Bench dataset for replay-only loading.
+- `HumanCentricEvaluator` returns deterministic artifact/event/trajectory summary
+  metrics and success status for all eight current NavDP generated mission
+  families.
 - Social metric classes exist as placeholders.
-- RL task wrapper exists as a placeholder.
+- Replay-backed `HumanCentricRLTask` exists with observation summaries, JSON
+  action validation, and terminal reward components from deterministic replay.
 - Deterministic JSON-level baseline policies are implemented for:
   - oracle human-centric assignment;
   - greedy nearest assignment;
@@ -88,11 +92,37 @@ Completed or scaffolded in GN0/GN-Bench-Tools:
   - no-human-awareness shortest-static-path behavior;
   - single-robot serial execution.
 
-Verified on 2026-07-01:
+Verified on 2026-07-01 and 2026-08-05:
 
 - Baseline policy module compiles.
 - All five policies emit deterministic `BaselineAction` records on the current
   NavDP generated mission-stream example.
+- `eval_navdp_missions.py` evaluates NavDP scenario JSONs, manifests, and
+  generated-example directories with replay metrics and the five JSON-level
+  baseline policies.
+- `vln_adapter_registry.py` and `run_vln_native_eval.py` provide a shared
+  adapter-readiness contract and dispatcher for replay baselines, GN-BAE, and
+  future native VLN adapters.
+- FutureNav, AwareVLN, GA-VLN, and TIC-VLA have importable non-runnable adapter
+  stubs. Readiness requires `native_ready`, so stubs do not become executable
+  when checkpoint paths are created.
+- `prepare_vln_checkpoints.py` turns the model matrix into exact checkpoint
+  fetch commands without downloading by default.
+- `export_vln_adapter_inputs.py` exports compact per-mission NavDP records for
+  native VLN adapters: instruction, robot assignment/start pose, goal(s), human
+  summaries, scene references, and mission metadata.
+- `vln_eval_results.py` imports replay summaries, GN0 native per-episode metric
+  logs, and external-reported payloads into one model result schema.
+- Python adapters launched through `run_vln_native_eval.py` now write that same
+  normalized result schema from `VLNAdapterRunResult` metrics.
+- On 2026-08-05, the full `/tmp/mission_examples` tree reported 55 episodes,
+  115 missions, 415 events, 55 successes, and `mean_mission_success_rate` `1.0`.
+- On 2026-08-05, `run_vln_native_eval.py` dispatched
+  `human_eval_json_policies` over the same full NavDP example directory and
+  wrote `/private/tmp/gn0_native_dispatcher_replay/vln_result.json`.
+- On 2026-08-06, `export_vln_adapter_inputs.py` exported the full NavDP example
+  directory as 115 model-facing mission rows across 55 episodes with zero
+  missing instructions and zero missing goals.
 
 ## Required Components
 
@@ -169,15 +199,25 @@ release to avoid migration churn.
 
 GN0/GN-Bench-Tools gaps only:
 
-- Scenario adapter does not yet produce a GN-Bench `Episode` subclass or normal
-  dataset entries.
-- No registered `HumanCentric-v0` dataset exists.
-- GN-Bench deterministic evaluator returns empty metrics and no success result.
-- Social metric classes are placeholders.
-- Baseline policies are JSON-level and not yet connected to a runner, RL task,
-  or GN-Bench environment.
-- RL wrapper has no real observation, transition, reward, or simulator binding.
-- No registered `HumanCentricTask-v0` task or measure wrappers exist.
+- Scenario adapter produces GN-Bench `Episode` records and preserves NavDP
+  payloads for family-specific evaluator contracts.
+- `HumanCentric-v0` exists for replay-only dataset loading, but it is not yet
+  bound to a simulator task.
+- GN-Bench deterministic evaluator now has family-specific replay metrics for
+  `deliver_to_human`, `navigate_with_social_constraints`,
+  `human_guided_uncertain_region`, `serve_queue`, `mission_stream`,
+  `dense_dynamic_humans`, `dense_multi_robot`, and `dense_dynamic_combined`.
+- Standalone social metric classes are placeholders; social-law checks currently
+  live in `HumanCentricEvaluator`.
+- Baseline policies are connected to a JSON assignment-sweep runner and CLI
+  output. Their JSON actions can drive the replay-backed RL task, but not yet
+  simulator-backed rollouts.
+- RL wrapper has replay-backed observation/action/reward support, but no
+  simulator transition or full `Env` binding yet.
+- `HumanCentricTask-v0` registration exists as a dependency-gated GN-Bench task
+  entry point with replay helpers, but full `Env` reset/step has not been
+  smoke-tested with simulator dependencies.
+- Human-centric measure wrappers are not implemented yet.
 - Simulator/render binding for dynamic humans is not implemented.
 - Split manifest format is still coordinated with the NavDP producer owner.
 
@@ -202,28 +242,35 @@ Goal: freeze the GN0/GN-Bench-Tools consumer target and unblock evaluator work.
 
 Goal: make GN-Bench able to load NavDP scenarios as normal episodes.
 
-- [ ] Add `GN_Bench/human_eval/dataset.py`.
-- [ ] Register `HumanCentric-v0` with GN-Bench dataset registry.
-- [ ] Make `HumanCentricEpisode` compatible with `GN_Bench.core.dataset.Episode`
+- [x] Add `GN_Bench/human_eval/dataset.py`.
+- [x] Register `HumanCentric-v0` with GN-Bench dataset registry.
+- [x] Make `HumanCentricEpisode` compatible with `GN_Bench.core.dataset.Episode`
   while preserving raw scenario payload in `info["human_scenario"]`.
-- [ ] Resolve scenario paths relative to split manifests.
-- [ ] Map NavDP scene assets to GN-Bench `scene_id`, `ref_json`, start position,
+- [x] Resolve scenario paths relative to split manifests.
+- [x] Map NavDP scene assets to GN-Bench `scene_id`, `ref_json`, start position,
   and start rotation.
-- [ ] Add adapter/dataset smoke tests using current generated examples.
+- [x] Add adapter/dataset smoke tests using a NavDP-shaped fixture.
 
 ### By Thursday 2026-07-16
 
 Goal: implement first real GN-Bench replay and metrics.
 
-- [ ] Wire `NavDPScenarioAdapter` into a usable dataset/split loader.
-- [ ] Implement deterministic sync replay over timestamped robot and human
+- [x] Wire `NavDPScenarioAdapter` into a usable dataset/split loader.
+- [x] Implement deterministic sync replay over timestamped robot and human
   trajectories.
-- [ ] Implement mission completion metrics:
+- [x] Implement mission completion metrics:
   - success/failure;
   - deadline satisfaction;
   - correct recipient/target;
   - per-mission status.
-- [ ] Implement first social metrics:
+- [x] Implement first `deliver_to_human` trajectory-derived metrics:
+  - correct human reached;
+  - object delivered;
+  - deadline success;
+  - wrong-human contact;
+  - non-target minimum human distance;
+  - personal-space violation count/duration.
+- [x] Implement first social metrics:
   - minimum robot-human distance;
   - collision count;
   - personal-space violation count/duration;
@@ -241,9 +288,9 @@ Goal: connect metrics, baselines, and replay into a pilot runner.
   - personal-space violation count/duration;
   - vulnerable-buffer violation;
   - queue service-order violation.
-- [ ] Connect all five JSON-level baselines to a split runner.
-- [ ] Emit per-policy replay results as JSON.
-- [ ] Produce a pilot result table with success, deadline, collision, and social
+- [x] Connect all five JSON-level baselines to a split runner.
+- [x] Emit per-policy replay results as JSON.
+- [x] Produce a pilot result table with success, deadline, collision, and social
   violation metrics.
 - [ ] Define how baseline `BaselineAction` maps into the future RL task action
   contract.
@@ -252,11 +299,11 @@ Goal: connect metrics, baselines, and replay into a pilot runner.
 
 Goal: expose the benchmark through GN-Bench task/RL interfaces.
 
-- [ ] Implement `HumanCentricRLTask` observation contract.
-- [ ] Implement RL action contract for assign/reassign/subgoal/interact/no-op.
-- [ ] Convert replay metrics into RL reward components.
-- [ ] Add `GN_Bench/human_eval/task.py`.
-- [ ] Register `HumanCentricTask-v0`.
+- [x] Implement replay-backed `HumanCentricRLTask` observation contract.
+- [x] Implement replay-backed JSON action contract for assign/reassign/subgoal/interact/no-op.
+- [x] Convert replay metrics into replay-backed RL reward components.
+- [x] Add `GN_Bench/human_eval/task.py`.
+- [x] Register `HumanCentricTask-v0` for full GN-Bench environments.
 - [ ] Add minimal measure wrappers if needed for `env.get_metrics()`.
 - [ ] Smoke-test `env.reset()` and one `env.step()` on a fixture episode.
 
@@ -272,12 +319,18 @@ Goal: stabilize GN-Bench consumer side for AAAI-27 reporting.
 
 ## Immediate Next Engineering Actions
 
-1. Update `docs/human_benchmark_integration.md` to use the current branch name.
-2. Add the missing one-page schema summary in NavDP.
-3. Add the pilot scene shortlist in NavDP.
-4. Implement GN-Bench split loading against the generated NavDP manifest.
-5. Implement deterministic replay for static fixture trajectories before adding
-   dynamic-human path generation.
+1. Register a simulator-facing human-centric task once the GN-Bench task/action
+   contract is accepted.
+2. Bind replay-backed `HumanCentricRLTask` actions into simulator-backed
+   transitions.
+3. Use `vln_eval_results.py` to normalize replay, native, and
+   external-reported result rows. Replay summaries and GN0 native `log/*.json`
+   directories are supported.
+4. Reproduce the current GN-BAE InteriorGS run as the reference native model row.
+5. Implement checkpoint-gated newer VLN adapters in order: FutureNav first,
+   then AwareVLN or GA-VLN depending on observation adapter feasibility. The
+   adapter contract, dispatcher, fetch planner, and non-runnable stubs exist;
+   native-ready model-specific adapters and checkpoints are still pending.
 
 The safest implementation order is schema and fixtures first, replay second,
 metrics third, baselines fourth, and large-scale dynamic-human generation last.
@@ -371,8 +424,7 @@ Current state:
 
 Remaining work:
 
-- Add a split runner that applies policies to every episode.
-- Convert `BaselineAction` into evaluator/RL task actions.
+- Convert `BaselineAction` into simulator/RL task actions.
 - Add unit tests for policy ordering and tie-breaking.
 
 Acceptance checks:
@@ -386,15 +438,14 @@ Purpose: expose the benchmark as an RL-style task.
 
 Work to do:
 
-- Define observation contract.
-- Define action contract.
-- Convert evaluator metrics into reward.
 - Bind to `EmbodiedTask` after deterministic replay works.
+- Bind replay-backed actions to simulator transitions.
 
 Acceptance checks:
 
 - A scripted baseline can run reset/step without simulator rendering.
 - Reward matches deterministic replay result for fixture trajectories.
+- Full GN-Bench task binding can call reset/step through `Env`.
 
 ### GN-Bench-Tools: Task And Measure Registration
 
@@ -402,13 +453,12 @@ Purpose: integrate human-centric metrics with GN-Bench task/config machinery.
 
 Work to do:
 
-- Add `GN_Bench/human_eval/task.py`.
-- Register `HumanCentricTask-v0`.
-- Implement `overwrite_sim_config` and episode-active logic.
 - Add measure wrappers if needed by `Env.get_metrics()`.
 
 Acceptance checks:
 
+- `make_task("HumanCentricTask-v0")` works when GN-Bench task dependencies such
+  as `gymnasium` are installed.
 - GN-Bench can construct an `Env` with the human-centric task and dataset.
 - `env.reset()` and one `env.step()` work on a fixture episode.
 

@@ -30,18 +30,18 @@ Created: 2026-07-28
 
 Status values: `Not Started`, `In Progress`, `Complete`.
 
-Do not mark a mission family `Complete` until its row names the focused tests that passed. Keep exactly one row marked `In Progress`.
+Do not mark a mission family `Complete` until its row names the focused tests that passed. Keep exactly one row marked `In Progress` while unfinished families remain.
 
 | Status | Mission family | NavDP sample checked | Adapter support | Evaluator metrics | Policy behavior | RL observation/reward | Tests | Notes |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| In Progress | `deliver_to_human` | Checked `/Users/dongjk/ProjectFiles/Navdp_Datagen_Pathplanner/tmp/mission_examples/deliver_to_human/jsons/example_CHINGMU_rescaled_1_0001_858833_deliver_to_human.json` on 2026-07-28 | Raw payload load only. Need normalized target human, target pose, assignment, deadline, and success-condition fields. | Not implemented. Need deterministic checks for correct target reach, object delivery, personal-space handling, deadline, and no wrong-human completion. | Existing baselines can emit assignment actions and resolve target human pose. Need route metadata only if evaluator requires it. | Not implemented. Add observation/reward fields only after evaluator metrics exist. | Pending: add focused `deliver_to_human` adapter/evaluator tests before completion. | First family establishes shared helpers for target pose, target human lookup, deadline, assignment, and completion checks. |
-| Not Started | `navigate_with_social_constraints` | Pending | Blocked until `deliver_to_human` completes. | Blocked | Blocked | Blocked | Pending | Next after `deliver_to_human`; expected to reuse target/pose helpers and add social-structure constraints. |
-| Not Started | `human_guided_uncertain_region` | Pending | Blocked until prior families complete. | Blocked | Blocked | Blocked | Pending | Dependency order places this before `serve_queue` even though the manifest lists `serve_queue` earlier. |
-| Not Started | `serve_queue` | Pending | Blocked until prior families complete. | Blocked | Blocked | Blocked | Pending | Queue order, service point, and served-human trace metrics should be introduced here. |
-| Not Started | `mission_stream` | Pending | Blocked until prior families complete. | Blocked | Blocked | Blocked | Pending | Multi-mission and multi-robot stream support should build on completed single-family contracts. |
-| Not Started | `dense_dynamic_humans` | Pending | Blocked until prior families complete. | Blocked | Blocked | Blocked | Pending | Dynamic-human collision, near-miss, and yielding metrics belong here unless introduced earlier by a checked sample. |
-| Not Started | `dense_multi_robot` | Pending | Blocked until prior families complete. | Blocked | Blocked | Blocked | Pending | Multi-robot goal completion and robot-robot interaction metrics belong here. |
-| Not Started | `dense_dynamic_combined` | Pending | Blocked until prior families complete. | Blocked | Blocked | Blocked | Pending | Final combined dense case should only start after dynamic-human and dense-multi-robot contracts are tested. |
+| Complete | `deliver_to_human` | Checked `/Users/dongjk/ProjectFiles/Navdp_Datagen_Pathplanner/tmp/mission_examples/deliver_to_human/jsons/example_CHINGMU_rescaled_1_0001_858833_deliver_to_human.json` on 2026-08-05 | GN-Bench `HumanCentricEpisode` support exists, including raw payload, scene id, start pose, `ref_json`, and `info["human_scenario"]`. | Implemented trajectory-derived checks for correct human reached, object delivered, deadline success, wrong-human physical contact, non-target minimum distance, and personal-space violation count/duration reporting. | JSON assignment sweep covers all five baseline policies; simulator-backed rollout remains pending. | Deferred to RL task phase; evaluation-phase completion does not require reward mapping. | Passing: `python3 -m unittest tests.test_human_eval_navdp_bridge`; real sample passes via `eval_navdp_missions.py --source ...deliver_to_human.json`. | Mission-stream child delivery tasks use stream-specific planned-goal/EOS contracts because their route targets differ from the single-family contact contract. Delivery reports personal-space buffer violations but uses physical non-target contact as the fatal avoidance condition. |
+| Complete | `navigate_with_social_constraints` | Checked L1/L2/L3/L4 samples under `/Users/dongjk/ProjectFiles/Navdp_Datagen_Pathplanner/tmp/mission_examples/navigate_with_social_constraints/` on 2026-08-05 | GN-Bench `HumanCentricEpisode` support works for all four social-law cases. | Implemented trajectory-derived goal/deadline/collision checks plus L1 personal-space, L2 pedestrian-yield conflict timing, L3 group-region capsule clearance, and L4 queue-tail endpoint checks. | JSON assignment sweep covers all five baseline policies. | Deferred to RL task phase. | Passing: `python3 -m unittest tests.test_human_eval_navdp_bridge`; real 20-file social-navigation directory passes through `eval_navdp_missions.py`. | Uses NavDP checked collision metadata when available; L3 allows 0.05 m route discretization tolerance around the group law region. |
+| Complete | `human_guided_uncertain_region` | Checked `/Users/dongjk/ProjectFiles/Navdp_Datagen_Pathplanner/tmp/mission_examples/human_guided_uncertain_region/jsons/example_InteriorGS_0732_841582_human_guided_uncertain_region.json` on 2026-08-05 | GN-Bench `HumanCentricEpisode` support works for the family. | Implemented trajectory/event checks for guidance request, human response, uncertainty resolution, stop-for-guidance interval, resolved-target reach, deadline success, and checked collision count. | JSON assignment sweep covers all five baseline policies. | Deferred to RL task phase. | Passing: `python3 -m unittest tests.test_human_eval_navdp_bridge`; real 5-file human-guided directory passes through `eval_navdp_missions.py`. | Evaluation now uses `trajectory_human_guided_uncertain_region` evidence instead of generic completion-only evidence. |
+| Complete | `serve_queue` | Checked `/Users/dongjk/ProjectFiles/Navdp_Datagen_Pathplanner/tmp/mission_examples/serve_queue/jsons/example_CHINGMU_rescaled_3_0011_859081_serve_queue.json` on 2026-08-05 | GN-Bench `HumanCentricEpisode` support works for multi-mission queue scenarios. | Implemented target-human contact after mission release, nearest queue contact, previous queue completion, declared queue-order preservation, deadline success, and checked collision count. | JSON assignment sweep covers all five baseline policies. | Deferred to RL task phase. | Passing: `python3 -m unittest tests.test_human_eval_navdp_bridge`; real 5-file queue directory passes through `eval_navdp_missions.py`. | Handles ordered service legs with per-target contact points and event-backed previous-completion checks. |
+| Complete | `mission_stream` | Checked `/Users/dongjk/ProjectFiles/Navdp_Datagen_Pathplanner/tmp/mission_examples/mission_stream/jsons/example_InteriorGS_0732_841582_mission_stream.json` on 2026-08-05 | GN-Bench `HumanCentricEpisode` support loads parent and child missions. | Implemented trajectory/timing checks for parent child coverage, release/assignment/completion/EOS timing, priority-order metadata consistency, per-child planned-goal reach, parent terminal robot goals, deadline success, and checked collision count. | JSON assignment sweep covers all five baseline policies. | Deferred to RL task phase. | Passing: `python3 -m unittest tests.test_human_eval_navdp_bridge`; real 5-file mission-stream directory passes through `eval_navdp_missions.py`. | Stream child delivery/navigation uses stream-specific planned-goal/EOS contracts because child route targets differ from single-family target-contact/social-law schemas. |
+| Complete | `dense_dynamic_humans` | Checked `/Users/dongjk/ProjectFiles/Navdp_Datagen_Pathplanner/tmp/mission_examples/dense_dynamic_humans/jsons/example_CHINGMU_rescaled_2_0063_859024_dense_dynamic_humans.json` on 2026-08-05 | GN-Bench `HumanCentricEpisode` support loads dense moving-human scenarios. | Implemented trajectory/metadata checks for active robot goal reach, checked collision, nominal robot-human conflict counts, moving-human activity through robot completion, human-human clearance, blocked-wait policy, and corner-case recovery counts. | JSON assignment sweep covers all five baseline policies. | Deferred to RL task phase. | Passing: `python3 -m unittest tests.test_human_eval_navdp_bridge`; real 5-file dense-dynamic-human directory passes through `eval_navdp_missions.py`. | Uses producer checked collision and nominal conflict metadata as the primary robot-human clearance contract; raw corner-case recoveries are reported but not fatal. |
+| Complete | `dense_multi_robot` | Checked `/Users/dongjk/ProjectFiles/Navdp_Datagen_Pathplanner/tmp/mission_examples/dense_multi_robot/jsons/example_CHINGMU_rescaled_2_0063_859024_dense_multi_robot.json` on 2026-08-05 | GN-Bench `HumanCentricEpisode` support loads dense multi-robot scenarios and skips `_cornercase_metadata` sidecars. | Implemented trajectory/metadata checks for all active robot goal reach, checked robot-robot collision, minimum robot-robot distance, dense motion/wait reporting, deadline success, and corner-case recovery counts. | JSON assignment sweep covers all five baseline policies. | Deferred to RL task phase. | Passing: `python3 -m unittest tests.test_human_eval_navdp_bridge`; real 5-file dense-multi-robot directory passes through `eval_navdp_missions.py`. | Multi-robot waits are valid when the producer declares required stops; robot-robot deadlock recoveries are reported but not fatal. |
+| Complete | `dense_dynamic_combined` | Checked `/Users/dongjk/ProjectFiles/Navdp_Datagen_Pathplanner/tmp/mission_examples/dense_dynamic_combined/jsons/example_CHINGMU_rescaled_2_0063_859024_dense_dynamic_combined.json` on 2026-08-05 | GN-Bench `HumanCentricEpisode` support loads combined dense scenarios and skips `_cornercase_metadata` sidecars. | Implemented composed dense human plus dense multi-robot evaluator metrics: active robot goals, checked collision, nominal robot-human conflicts, human activity, human-human clearance, robot-robot clearance, wait/recovery reporting, and deadline success. | JSON assignment sweep covers all five baseline policies. | Deferred to RL task phase. | Passing: `python3 -m unittest tests.test_human_eval_navdp_bridge`; real 5-file dense-dynamic-combined directory passes through `eval_navdp_missions.py`. | Final combined dense evaluation contract is complete for replay-only JSON evaluation. |
 
 ## Per-Family Workflow
 
@@ -58,29 +58,30 @@ Before moving to the next mission family:
 
 ## Current Working Family
 
-- Selected mission family: `deliver_to_human`
+- Selected mission family: none; all eight evaluation-phase mission families are complete.
 - Source sample path:
-  `/Users/dongjk/ProjectFiles/Navdp_Datagen_Pathplanner/tmp/mission_examples/deliver_to_human/jsons/example_CHINGMU_rescaled_1_0001_858833_deliver_to_human.json`
+  `/Users/dongjk/ProjectFiles/Navdp_Datagen_Pathplanner/tmp/mission_examples/dense_dynamic_combined/jsons/example_CHINGMU_rescaled_2_0063_859024_dense_dynamic_combined.json`
 - Source sample summary:
-  - `scenario_id`: `example_CHINGMU_rescaled_1_0001_858833_deliver_to_human`
-  - `scene_id`: `0001_858833`
+  - `scenario_id`: `example_CHINGMU_rescaled_2_0063_859024_dense_dynamic_combined`
+  - `scene_id`: `0063_859024`
   - `schema_version`: `0.1`
-  - One robot: `robot_alpha`
-  - Humans: `human_target` with role `target_person`; `human_context` with role `bystander`
-  - One mission: `mission_deliver_to_human_001`
+  - Four active robots: `robot_001` through `robot_004`
+  - Six moving humans: `human_fast_01`, `human_slow_01`, `human_normal_01`, `human_fast_02`, `human_slow_02`, `human_normal_02`
+  - One mission: `mission_dense_dynamic_combined_001`
+  - Event log currently has only `mission_release` and `robot_assignment`; success must be trajectory/metadata-derived.
 - Expected schema fields:
   - Top level: `schema_version`, `scenario_id`, `scene_id`, `scene_assets`, `robots`, `humans`, `missions`, `social_structures`, `event_log`, `expected_result`, `metadata`
-  - Mission fields: `mission_id`, `mission_type`, `assigned_robot_id`, `release_time`, `deadline`, `priority`, `target_human_id`, `target_object_id`, `target_region_id`, `social_law_ids`, `success_conditions`, `metadata`
-  - Mission metadata fields seen in the sample: `contact_distance_m`, `planned_goal_world`, `target_human_world`, `mission_end_time_s`, `endpoint_semantics`, `avoidance_semantics`, `target_human_description`, `target_human_resource_id`, `target_object_grounding`, `robot_instructions`, `human_behavior_instructions`
-  - Success conditions seen in the sample: `correct_human_reached`, `object_delivered`, `personal_space_respected`
+  - Mission metadata fields seen in the sample: `active_robot_ids`, `active_robot_count`, `configured_dense_robot_count`, `planned_goal_world`, `planned_goal_world_by_robot`, `minimum_robot_robot_distance_m`, `minimum_moving_robot_human_distance_m`, `minimum_stopped_robot_human_distance_m`, `minimum_human_human_distance_m`, `mission_end_time_s`, `expected_robot_motion`, `stationary_robot_ids`, `training_robot_ids`
+  - Top-level dense metadata fields seen in the sample: `metadata.collision_check`, `metadata.dense_dynamic_combined.agent_adjustments`, `metadata.dense_dynamic_combined.robot_adjustments`, `metadata.dense_dynamic_combined.human_adjustments`, `metadata.dense_dynamic_combined.nominal_robot_human_conflict_samples`, `metadata.dense_dynamic_combined.corner_case_recovery`
+  - Success conditions seen in the sample: `all_active_robot_goal_regions_reached`, `robots_keep_moving_when_passable`, `wait_only_when_immediately_blocked`, `dense_robot_human_clearance_policy_respected`, `humans_keep_moving_until_robot_completion`, `human_human_collision_free`, `no_robot_robot_collision`
 - Implementation goal:
-  Normalize enough mission, human, robot, deadline, target pose, and success-condition data for deterministic `deliver_to_human` replay metrics. Then expose those metrics to RL reward code.
-- Open questions:
-  - Should `object_delivered` be inferred solely from reaching `target_human_id` within `contact_distance_m`, or should the evaluator require an explicit delivery event when NavDP emits one?
-  - Should `personal_space_respected` exempt the target human inside `contact_distance_m` for the full approach or only at terminal contact?
-  - Should deadline success use `deadline` or `metadata.mission_end_time_s` when both are present and differ?
+  Complete for replay-only JSON evaluation. Replay-backed RL observation/action/reward support exists; remaining work is simulator/native VLN adapter integration, not mission-family replay support.
+- Closed decisions:
+  - Combined success shares dense multi-robot stop semantics when producer metadata declares required stops.
+  - Corner-case recovery deadlock/teleport/human-stall events are reported as explicit producer-side recovery metrics and are not fatal by themselves.
+  - Checked collision metadata remains the primary clearance contract; trajectory sampling is used as a robot-robot distance fallback when the checked closest pair is not robot-robot.
 - Next command to run:
-  `python3 -m py_compile GN-Bench-Tools/GN_Bench/human_eval/scenario_adapter.py GN-Bench-Tools/GN_Bench/human_eval/evaluator.py GN-Bench-Tools/GN_Bench/human_eval/rl_task.py GN-Bench-Tools/GN_Bench_baselines/human_eval/policies.py`
+  `python3 eval_navdp_missions.py --source /Users/dongjk/ProjectFiles/Navdp_Datagen_Pathplanner/tmp/mission_examples --result-path /private/tmp/gn0_navdp_all_mission_examples`
 
 ## Remote Lab Notes
 
@@ -111,3 +112,119 @@ Before moving to the next mission family:
   `PYTHONPYCACHEPREFIX=/private/tmp/gn0_pycache python3 -m py_compile GN-Bench-Tools/GN_Bench/human_eval/scenario_adapter.py GN-Bench-Tools/GN_Bench/human_eval/evaluator.py GN-Bench-Tools/GN_Bench/human_eval/rl_task.py GN-Bench-Tools/GN_Bench_baselines/human_eval/policies.py`
 - Verified the JSON-level `OracleHumanCentricPolicy` smoke path emits an assignment for `robot_alpha` to `mission_deliver_to_human_001` on the sampled `deliver_to_human` scenario.
 - Next implementation session should continue with `deliver_to_human` only: adapter normalization first, deterministic evaluator metrics second, RL observation/reward third, then focused tests before marking the family complete.
+
+### 2026-08-05
+
+- Added replay-only NavDP mission entry point:
+  `python3 eval_navdp_missions.py --source /Users/dongjk/ProjectFiles/Navdp_Datagen_Pathplanner/tmp/mission_examples/example_manifest.json --result-path tmp/navdp_human_eval`.
+- Added `HumanCentric-v0` dataset registration and tests under
+  `GN-Bench-Tools/tests/test_human_eval_navdp_bridge.py`.
+- Implemented first `deliver_to_human` trajectory metrics in
+  `GN_Bench/human_eval/evaluator.py`: target contact, delivery, deadline,
+  wrong-human contact, non-target minimum distance, and personal-space
+  violation count/duration.
+- Verified the real `deliver_to_human` sample reports `mean_mission_success_rate`
+  `1.0` even though its event log has no completion event.
+- Verified the current NavDP mission-stream manifest reports 5 episodes, 50
+  missions, 198 events, 5 successes, and `mean_mission_success_rate` `1.0`.
+- Marked `deliver_to_human` complete for the evaluation phase. RL reward mapping
+  is explicitly deferred to the RL task phase.
+- Implemented first `navigate_with_social_constraints` L1 personal-space
+  trajectory metrics and kept L2/L3/L4 on event-log success until their own
+  law-specific contracts are implemented.
+- Verified the 20-file social-navigation example directory reports 20
+  successes, 20 missions, 76 events, and `mean_mission_success_rate` `1.0`.
+- Added trajectory-backed L2/L3/L4 social-navigation contracts:
+  pedestrian-yield conflict timing, group-region capsule clearance, and
+  queue-tail endpoint checks. The real 20-file social-navigation directory
+  still reports 20 successes, 20 missions, 76 events, and
+  `mean_mission_success_rate` `1.0`.
+- Added trajectory/event metrics for `human_guided_uncertain_region`:
+  guidance request/response, uncertainty resolution, stop-for-guidance,
+  resolved-target reach, deadline, and checked collision count. The real
+  5-file human-guided directory reports 5 successes, 5 missions, 31 events,
+  and `mean_mission_success_rate` `1.0`.
+- Added trajectory/event metrics for `serve_queue`: target contact after
+  release, nearest queue contact, previous queue completion, declared queue
+  order, deadline, and checked collision count. The real 5-file queue
+  directory reports 5 successes, 20 missions, 70 events, and
+  `mean_mission_success_rate` `1.0`.
+- Marked `navigate_with_social_constraints`, `human_guided_uncertain_region`,
+  and `serve_queue` complete for the evaluation phase. `mission_stream` is now
+  the active family.
+- Added trajectory/timing metrics for `mission_stream`: parent child coverage,
+  release/assignment/completion/EOS timing, per-child planned-goal reach,
+  parent terminal robot goals, priority-order metadata consistency, deadline,
+  and checked collision count. The real 5-file mission-stream directory reports
+  5 successes, 50 missions, 198 events, and `mean_mission_success_rate` `1.0`
+  with `trajectory_mission_stream_parent` and `trajectory_mission_stream_child`
+  evidence.
+- Marked `mission_stream` complete for the evaluation phase. The active family
+  is now `dense_dynamic_humans`.
+- Added trajectory/metadata metrics for `dense_dynamic_humans`: active robot
+  goal reach, checked collision, nominal robot-human conflict counts,
+  moving-human activity, human-human clearance, blocked-wait policy, deadline,
+  and corner-case recovery counts. The real 5-file dense-dynamic-human
+  directory reports 5 successes, 5 missions, 10 events, and
+  `mean_mission_success_rate` `1.0`.
+- Marked `dense_dynamic_humans` complete for the evaluation phase. The active
+  family is now `dense_multi_robot`.
+- Added trajectory/metadata metrics for `dense_multi_robot`: active robot goal
+  reach, checked robot-robot collision, minimum robot-robot distance,
+  wait/recovery reporting, deadline, and corner-case recovery counts. The real
+  5-file dense-multi-robot directory reports 5 successes, 5 missions, 10 events,
+  and `mean_mission_success_rate` `1.0`.
+- Marked `dense_multi_robot` complete for the evaluation phase. The active
+  family is now `dense_dynamic_combined`.
+- Added composed trajectory/metadata metrics for `dense_dynamic_combined`:
+  active robot goal reach, checked collision, nominal robot-human conflict
+  counts, moving-human activity, human-human clearance, robot-robot clearance,
+  wait/recovery reporting, deadline, and corner-case recovery counts. The real
+  5-file dense-dynamic-combined directory reports 5 successes, 5 missions,
+  10 events, and `mean_mission_success_rate` `1.0`.
+- Marked `dense_dynamic_combined` complete for the evaluation phase. All eight
+  NavDP mission families are now covered by replay-only JSON evaluation.
+- Verified the full `/tmp/mission_examples` tree, excluding `_cornercase_metadata`
+  sidecars, reports 55 episodes, 115 missions, 415 events, 55 successes, and
+  `mean_mission_success_rate` `1.0`.
+- Adjusted `deliver_to_human` success semantics to distinguish target-contact
+  tolerance from non-target physical contact. Personal-space buffer violations
+  remain reported, but producer-expected delivery variants pass when no
+  non-target physical contact occurs.
+- Added replay-backed `HumanCentricRLTask` observation/action/reward support.
+  A baseline assignment action can now drive `reset()`/`step()` without simulator
+  rendering, and terminal reward components are derived from deterministic replay
+  metrics.
+- Added dependency-gated `HumanCentricTask-v0` registration with replay helpers
+  and simulator config mapping. Full `Env` reset/step remains pending until
+  GN-Bench task dependencies such as `gymnasium` are installed in the run
+  environment.
+- Added `vln_eval_results.py` to normalize replay summaries, native GN0 outputs,
+  and external-reported model rows into one result schema. Verified it imports
+  the full NavDP example replay summary as a completed
+  `human_eval_json_policies` result row.
+- Added the `vln_adapters` base contract, `vln_adapter_registry.py`, and
+  `run_vln_native_eval.py`. The dispatcher ran
+  `human_eval_json_policies` over the full NavDP example directory and wrote a
+  normalized `/private/tmp/gn0_native_dispatcher_replay/vln_result.json`.
+- Updated `plan_vln_evaluations.py` so newer public-checkpoint candidates now
+  receive concrete dispatcher commands while remaining marked
+  `adapter_required` until their model-specific adapter modules and local
+  checkpoints exist.
+- Added GN0 native log import to `vln_eval_results.py` for BAE-style
+  `log/*.json` result directories.
+- Added non-runnable adapter stubs for FutureNav, AwareVLN, GA-VLN, and
+  TIC-VLA. The readiness registry now distinguishes `stub` from
+  `native_ready`, preventing placeholder adapters from becoming runnable just
+  because a checkpoint path exists.
+- Added `prepare_vln_checkpoints.py`; the current post-2025 native-runnable
+  checkpoint plan reports four missing fetchable checkpoints: FutureNav,
+  AwareVLN, GA-VLN, and TIC-VLA.
+- Updated native Python adapter dispatch so future `native_ready` adapters write
+  normalized `VLNEvaluationResult` rows to `vln_result.json` instead of an
+  adapter-specific payload.
+- Added `export_vln_adapter_inputs.py` and `vln_adapters/navdp_inputs.py` to
+  produce compact per-mission records for model adapters. Verified the full
+  NavDP example directory exports 115 mission inputs across 55 episodes, all
+  eight mission families, 15 multi-robot missions, and zero missing instructions
+  or goals.
