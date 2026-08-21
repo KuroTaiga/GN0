@@ -394,6 +394,10 @@ Benchmark-facing metrics:
 - `queue_index`
 - `queue_order`
 - `collision_count`
+- `human_identification_difficulty`
+- `serve_queue_target_identification_difficulty`
+- `human_identification_best_confuser_id`
+- `human_identification_confuser_count`
 
 Design notes:
 
@@ -403,7 +407,8 @@ Design notes:
 - Queue order is currently checked from declared mission metadata and event
   order; simulator-native runs should also detect physical queue cutting.
 - If service depends on identifying the correct queue member, report the shared
-  `human_identification_*` difficulty metrics.
+  `human_identification_*` difficulty metrics plus the
+  `serve_queue_target_identification_difficulty` alias.
 
 Future additions:
 
