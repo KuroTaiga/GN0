@@ -65,6 +65,7 @@ Relevant current files:
 - `GN-Bench-Tools/GN_Bench/human_eval/rl_task.py`
 - `GN-Bench-Tools/GN_Bench_baselines/human_eval/policies.py`
 - `docs/human_benchmark_integration.md`
+- `docs/human_navigation_metrics_design.md`
 
 ## Current Implementation Status
 
@@ -218,6 +219,8 @@ GN0/GN-Bench-Tools gaps only:
   entry point with replay helpers, but full `Env` reset/step has not been
   smoke-tested with simulator dependencies.
 - Human-centric measure wrappers are not implemented yet.
+- The metric taxonomy, current code mapping, and per-family metric design are
+  tracked in `docs/human_navigation_metrics_design.md`.
 - Simulator/render binding for dynamic humans is not implemented.
 - Split manifest format is still coordinated with the NavDP producer owner.
 

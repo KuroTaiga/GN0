@@ -24,6 +24,8 @@ generation side should live in `Navdp_Datagen_Pathplanner` under
 
 ## Immediate TODOs
 
+- Metric taxonomy, source rationale, code mapping, and per-family metric design
+  are tracked in `docs/human_navigation_metrics_design.md`.
 - Navigation model evaluation inventory and the checkpoint-gated new-model
   shortlist are tracked in `docs/navigation_model_evaluation_research.md`.
 - Use `eval_navdp_missions.py` for replay-only NavDP mission smoke evaluation

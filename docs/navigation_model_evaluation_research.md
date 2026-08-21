@@ -6,6 +6,9 @@ This note tracks which navigation models GN0 already evaluates, which existing
 models still need evaluation, and which post-2025 models should be considered
 for new additions.
 
+Metric definitions and GN0-specific model/reporting semantics are tracked in
+`docs/human_navigation_metrics_design.md`.
+
 ## Cutoff Rule
 
 For "new" additions, use a strict first-public-release cutoff:
