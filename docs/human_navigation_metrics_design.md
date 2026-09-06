@@ -50,6 +50,22 @@ top-level row has coarse model-comparison fields:
 - `mean_completion_rate`
 - `metrics_json`
 
+Publication replay also emits normalized JSONL/CSV rows through
+`GN_Bench.human_eval.results`. Each row carries the Part 2 metric layer:
+`navigation_error_m`, `success_rate`, `collision_rate`,
+`total_collision_rate`, `mission_completion_rate`, `weighted_mission_score`,
+`deadline_miss_rate`, `queue_order_violation_rate`,
+`personal_space_violation_s`, `pedestrian_yield_violation_rate`,
+`group_integrity_violation_rate`, `correct_human_fulfillment_rate`,
+`multi_robot_throughput`, `handoff_success_rate`, and
+`cancellation_compliance_rate`.
+
+Rows are tagged with `publication_variants` so result tables can be grouped by
+`human_free`, `human_present`, `social_law`, and `full_mission_stream`.
+`eval_navdp_missions.py` writes these rows as `result_rows.jsonl` and
+`result_rows.csv`; `summary.json` includes `by_split`, `by_mission_type`, and
+`by_publication_variant` aggregates.
+
 Native GN0 log import currently preserves common BAE/GN0 fields inside
 `metrics_json`: `mean_success`, `mean_oracle_success`, `mean_spl`,
 `mean_path_length`, and `mean_distance_to_goal`.
@@ -130,6 +146,24 @@ Top-level model comparison should eventually include:
 
 Until the schema is widened, put new model-level aggregates inside
 `VLNEvaluationResult.metrics_json`.
+
+For the publication package, the stable replay summary keys are:
+
+- `navigation_error_m`
+- `success_rate`
+- `collision_rate`
+- `total_collision_rate`
+- `mission_completion_rate`
+- `weighted_mission_score`
+- `deadline_miss_rate`
+- `queue_order_violation_rate`
+- `personal_space_violation_s`
+- `pedestrian_yield_violation_rate`
+- `group_integrity_violation_rate`
+- `correct_human_fulfillment_rate`
+- `multi_robot_throughput`
+- `handoff_success_rate`
+- `cancellation_compliance_rate`
 
 ## Cross-Mission GN0 Metrics
 

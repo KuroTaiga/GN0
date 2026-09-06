@@ -17,11 +17,17 @@ if str(GN_BENCH_TOOLS) not in sys.path:
     sys.path.insert(0, str(GN_BENCH_TOOLS))
 
 from GN_Bench.human_eval.baseline_runner import (  # noqa: E402
+    DEFAULT_POLICY_NAMES,
     POLICY_CLASSES,
     run_policies_on_episode,
     summarize_policy_results,
 )
 from GN_Bench.human_eval.evaluator import HumanCentricEvaluator  # noqa: E402
+from GN_Bench.human_eval.results import (  # noqa: E402
+    replay_result_row,
+    summarize_replay_result_rows,
+    write_replay_result_rows,
+)
 from GN_Bench.human_eval.scenario_adapter import NavDPScenarioAdapter  # noqa: E402
 
 
@@ -64,7 +70,7 @@ def parse_args() -> argparse.Namespace:
         "--policies",
         nargs="+",
         choices=sorted(POLICY_CLASSES),
-        default=sorted(POLICY_CLASSES),
+        default=list(DEFAULT_POLICY_NAMES),
         help="Baseline policies to run.",
     )
     parser.add_argument(
@@ -90,8 +96,11 @@ def main() -> None:
 
     evaluator = HumanCentricEvaluator()
     rows: list[JsonDict] = []
+    result_rows: list[JsonDict] = []
     for episode in episodes:
         replay = evaluator.replay(episode)
+        normalized_row = replay_result_row(episode, replay)
+        result_rows.append(normalized_row)
         policies = (
             {}
             if args.skip_policies
@@ -100,6 +109,7 @@ def main() -> None:
         row = {
             "episode": _episode_summary(episode),
             "replay": asdict(replay),
+            "result_row": normalized_row,
             "policies": policies,
         }
         rows.append(row)
@@ -108,7 +118,26 @@ def main() -> None:
             encoding="utf-8",
         )
 
+    result_rows_jsonl, result_rows_csv = write_replay_result_rows(result_rows, result_dir)
     summary = _summary(rows)
+    canonical_summary = summarize_replay_result_rows(result_rows)
+    summary.update(
+        {
+            key: value
+            for key, value in canonical_summary.items()
+            if key
+            not in {
+                "episode_count",
+                "success_count",
+                "total_missions",
+                "total_events",
+            }
+        }
+    )
+    summary["result_tables"] = {
+        "jsonl": str(result_rows_jsonl),
+        "csv": str(result_rows_csv),
+    }
     summary.update(summarize_policy_results(rows) if not args.skip_policies else {})
     (result_dir / "summary.json").write_text(
         json.dumps(summary, indent=2, sort_keys=True),
@@ -146,6 +175,7 @@ def _episode_summary(episode: Any) -> JsonDict:
         "dataset": episode.dataset,
         "mission_type": episode.mission_type,
         "schema_version": episode.schema_version,
+        "split": episode.split or "unsplit",
     }
 
 

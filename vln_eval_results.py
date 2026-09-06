@@ -56,6 +56,7 @@ def result_from_replay_summary(
     summary = json.loads(summary_path.read_text(encoding="utf-8"))
     if not isinstance(summary, dict):
         raise ValueError(f"Replay summary must be a JSON object: {summary_path}")
+    metric_means = _dict_value(summary.get("metric_means"))
     return VLNEvaluationResult(
         model=record.model,
         bucket=record.bucket,
@@ -71,8 +72,16 @@ def result_from_replay_summary(
         total_missions=int(_number(summary.get("total_missions"), 0)),
         total_events=int(_number(summary.get("total_events"), 0)),
         success_count=int(_number(summary.get("success_count"), 0)),
-        mean_mission_success_rate=_optional_number(summary.get("mean_mission_success_rate")),
-        mean_completion_rate=_optional_number(summary.get("mean_completion_rate")),
+        mean_mission_success_rate=_first_optional_number(
+            summary.get("mean_mission_success_rate"),
+            summary.get("mean_success_rate"),
+            metric_means.get("success_rate"),
+        ),
+        mean_completion_rate=_first_optional_number(
+            summary.get("mean_completion_rate"),
+            summary.get("mean_mission_completion_rate"),
+            metric_means.get("mission_completion_rate"),
+        ),
         metrics_json=json.dumps(summary, sort_keys=True, separators=(",", ":")),
         notes=notes,
     )
@@ -390,6 +399,18 @@ def _optional_number(value: Any) -> float | None:
             return None
     if isinstance(value, (int, float)):
         return float(value)
+    return None
+
+
+def _dict_value(value: Any) -> JsonDict:
+    return value if isinstance(value, dict) else {}
+
+
+def _first_optional_number(*values: Any) -> float | None:
+    for value in values:
+        parsed = _optional_number(value)
+        if parsed is not None:
+            return parsed
     return None
 
 

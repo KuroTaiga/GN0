@@ -51,6 +51,11 @@ generation side should live in `Navdp_Datagen_Pathplanner` under
 - Use `vln_eval_results.py` to normalize replay, native, or external-reported
   model outputs into one result schema:
   `python3 vln_eval_results.py --model human_eval_json_policies --from-replay-summary tmp/navdp_human_eval/summary.json --json`.
+- Use `run_human_centric_baselines.py` for the publication baseline suite once
+  the Pathplanner Part 1 package exists:
+  `python3 run_human_centric_baselines.py --splits /private_lxh/dongjk/navdata/publication_readiness_v1/splits/publication_v1_split_manifest.json --model-input-root /private_lxh/dongjk/navdata/publication_readiness_v1/model_inputs --hidden-gt-root /private_lxh/dongjk/navdata/publication_readiness_v1/hidden_gt --output-root /private_lxh/dongjk/navdata/publication_baselines_v1`.
+- Use `run_dagger_collection.py` for Monday iteration-000 teacher export:
+  `python3 run_dagger_collection.py --split /private_lxh/dongjk/navdata/publication_readiness_v1/splits/publication_v1_split_manifest.json --model-input-root /private_lxh/dongjk/navdata/publication_readiness_v1/model_inputs --hidden-gt-root /private_lxh/dongjk/navdata/publication_readiness_v1/hidden_gt --policy oracle_route_follower --iterations 1 --episodes-per-split 8 --output-root /private_lxh/dongjk/navdata/publication_dagger_smoke_v1`.
 - Python adapters dispatched by `run_vln_native_eval.py` also write the same
   normalized `vln_result.json` row, using their `VLNAdapterRunResult.metrics`
   or summary JSON as input.
